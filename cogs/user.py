@@ -17,15 +17,23 @@ class User(interactions.Extension):
                 description="Your twitter username",
                 type=interactions.OptionType.STRING,
                 required=True,
+            ),
+            interactions.Option(
+                name="wallet",
+                description="Your wallet address",
+                type=interactions.OptionType.STRING,
+                required=True,
             )
         ]
     )
-    async def register(self, ctx: interactions.CommandContext, username: str):
+    async def register(self, ctx: interactions.CommandContext, username: str, wallet: str):
         db = user_db.get_user(ctx.author.id)
         if db.Uid != "None":
             return await ctx.send("You are already registered!")
-        data = self.client.get_user(username=username).json()["data"]["id"]
-        db.Uid = data
+        data = self.client.get_user(username=username)
+        db.Uid = data.data.id
+        db.username = data.data.username
+        db.Wallet = wallet
         await ctx.send("You have been registered!")
         return user_db.update()
 

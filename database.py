@@ -5,51 +5,49 @@ from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = "user"
+class Guild(Base):
+    __tablename__ = "guild"
 
     id = Column('id', Integer, primary_key=True)
 
     def __init__(self, id):
         print(f'2{id}')
-        self.id = id
+        self.id = id 
+               
+    wallet_pubkey = Column('wallet_pubkey', String, default='None')
+    wallet_secret = Column('wallet_secret', String, default='None')
 
-    username = Column('username', String, default='None')      
-    Uid = Column('Uid', String, default='None')
-    Points = Column('Points', Integer, default=0)
-    Wallet = Column('Wallet', String, default="None")
-
-engine = create_engine('sqlite:///users.db')
+engine = create_engine('sqlite:///database.db')
 Base.metadata.create_all(bind=engine)
 db = sessionmaker(bind=engine)()
 
 def update():
     db.commit()
 
-def get_user(user_id) -> User:
-    user_id = int(user_id)
+def get_guild(guild_id) -> Guild:
+    guild_id = int(guild_id)
     try:
-        return db.query(User).filter(User.id == user_id).one()
+        return db.query(Guild).filter(Guild.id == guild_id).one()
     except exc.NoResultFound as e:
-        print(e, "Creating user table...")
-        return create_user(user_id)
+        print(e, "Creating guild table...")
+        return create_guild(guild_id)
 
-def create_user(user_id):
+def create_guild(guild_id):
     try:
-        user = User(user_id)
+        guild = Guild(guild_id)
 
-        db.add(user)
+        db.add(guild)
 
         update()
 
-        return user
+        return guild
     except exc.IntegrityError as e: # Occurs when an object has the same key id as an object already in the table.
         print(e)
         return None
 
-def remove_user(user_id):
+def remove_guild(guild_id):
     try:
-        db.remove(db.query(User).filter(User.id == user_id).one())
+        db.remove(db.query(Guild).filter(Guild.id == guild_id).one())
         update()
         return True
     except exc.NoResultFound as e:
