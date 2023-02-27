@@ -3,3 +3,4 @@ users.db
 database.db
 .DS_Store
 __pycache__
+bounties/

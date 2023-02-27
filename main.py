@@ -16,6 +16,7 @@ initial_ext = [
   	"cogs.events",
  	"cogs.user",
   	"cogs.admin",
+	"cogs.create"
 ]
 
 for extension in initial_ext:
