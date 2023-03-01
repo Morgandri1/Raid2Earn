@@ -43,10 +43,10 @@ def _transfer(amount, wallet, guild, sol: Client, token: Pubkey | None = None, t
         return send_sol(_to, _from, sol, amount)
     else:
         print("tokens caught")
-        decimals = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token_address}").json()["decimals"])
+        decimals = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token_address}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()["decimals"])
         return send_token(_to, _from, 10**decimals, token, token_address, amount, sol)
 
-def preflight(cls, ctx, guild):
+def preflight(cls, ctx, guild, account: str | None = None):
     """checks if the message is a bounty message
     
     codes:
@@ -54,7 +54,7 @@ def preflight(cls, ctx, guild):
     1: Not enough SOL in payout wallet
     2: Bounty expired
     3: go
-    """
+    """        
     if not os.path.exists(f"bounties/{guild.id}/{ctx.message.id}.json"):
         return 0
     db = database.get_guild(guild.id)
@@ -68,8 +68,10 @@ def preflight(cls, ctx, guild):
     if bounty["token"][0] == "SOL":
         if bal / 1000000000 < bounty["reward"]:
             return 1
-    else:
-        return 3
+    elif account is not "SOL":
+        balance = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={account}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()["tokenAmount"]["uiAmount"])
+        if balance < int(bounty["reward"]):
+            return 1
     return 3
 
 def get_allowed_guilds():

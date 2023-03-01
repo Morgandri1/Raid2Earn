@@ -6,6 +6,7 @@ import json
 from datetime import timedelta, datetime
 import os
 from solders.pubkey import Pubkey
+import database
 
 class create(interactions.Extension):
     def __init__(self, bot) -> None:
@@ -60,6 +61,11 @@ class create(interactions.Extension):
         ]
     )
     async def create(self, ctx: interactions.CommandContext, info: str, duration: int, link: str, reward: int, requirement: int):
+        if not os.path.exists(f"bounties/{ctx.guild_id}"):
+            os.mkdir(f"bounties/{ctx.guild_id}")
+        db = database.get_guild(ctx.guild_id)
+        if db.wallet_pubkey == "None":
+            return await ctx.send("Please create a wallet first with `/wallet`.", ephemeral=True)
         embed = interactions.Embed(
             title="Bounty Builder",
             description="Please select a payout token to create a bounty."

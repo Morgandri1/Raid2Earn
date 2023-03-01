@@ -16,7 +16,10 @@ class Events(interactions.Extension):
     @interactions.extension_component("claim")
     async def claim(self, ctx: interactions.ComponentContext):
         await ctx.defer(ephemeral=True)
-        if preflight(self, ctx, ctx.guild) == 1:
+        with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "r") as f:
+            bounty = json.load(f)
+
+        if preflight(self, ctx, ctx.guild, bounty["token"][0]) == 1:
             return await ctx.send("The wallet does not have enough SOL to pay the bounty. please alert an admin, and check back later.", ephemeral=True)
         elif preflight(self, ctx, ctx.guild) == 2:
             os.remove(f"bounties/{ctx.guild_id}/{ctx.message.id}.json")
