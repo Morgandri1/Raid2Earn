@@ -8,7 +8,7 @@ from solana.rpc.api import Client
 class Admin(interactions.Extension):
     def __init__(self, bot) -> None:
         self.bot: interactions.Client = bot
-        self.client: Client = Client("https://api.devnet.solana.com")
+        self.client: Client = Client("https://api.mainnet-beta.solana.com")
 
     @interactions.extension_command(
         name="wallet",

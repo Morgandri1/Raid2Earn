@@ -1,6 +1,6 @@
-import ed25519
+from solana.rpc.api import Client
+from solders.pubkey import Pubkey
 
-private_key = b'your-private-key-here'
-public_key = ed25519.publickey(private_key)
+sol = Client("https://api.mainnet-beta.solana.com")
 
-print("Public key:", public_key.to_bytes())
+print(sol.get_account_info_json_parsed(Pubkey.from_string("")))

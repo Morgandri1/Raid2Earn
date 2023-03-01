@@ -5,11 +5,12 @@ from solana.rpc.api import Client
 import json
 from datetime import timedelta, datetime
 import os
+from solders.pubkey import Pubkey
 
 class create(interactions.Extension):
     def __init__(self, bot) -> None:
         self.bot: interactions.Client = bot
-        self.client = Client("https://api.devnet.solana.com")
+        self.client: Client = Client("https://api.mainnet-beta.solana.com")
 
     @interactions.extension_command(
         name="create",
@@ -89,6 +90,7 @@ class create(interactions.Extension):
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "r") as f:
             data = json.load(f)
         data["token"] = token
+        data["address"] = json.loads(self.client.get_account_info_json_parsed(Pubkey.from_string(token[0])).to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"] if token[0] != "SOL" else None
         data["ends"] = (datetime.utcnow() + timedelta(hours=data["duration"])).timestamp()
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "w") as f:
             json.dump(data, f)

@@ -5,15 +5,17 @@ import json
 import os
 import tweepy
 from solana.rpc.api import Client
+from solders.pubkey import Pubkey
 
 class Events(interactions.Extension):
     def __init__(self, bot) -> None:
         # self.bot: interactions.Client = bot
         self.client: tweepy.Client = tweepy.Client(bearer_token=r"AAAAAAAAAAAAAAAAAAAAAJDQfAEAAAAAunT6NcW8O8TdjpU1%2BhI%2F9kvSM68%3DkyCmgJCWkDnnm2wNHo6PWPYRWSaKNI6bAtwNa4QcRPEGZtb8lm")
-        self.sol: Client = Client("https://api.devnet.solana.com")
+        self.sol: Client = Client("https://api.mainnet-beta.solana.com")
 
     @interactions.extension_component("claim")
     async def claim(self, ctx: interactions.ComponentContext):
+        await ctx.defer(ephemeral=True)
         if preflight(self, ctx, ctx.guild) == 1:
             return await ctx.send("The wallet does not have enough SOL to pay the bounty. please alert an admin, and check back later.", ephemeral=True)
         elif preflight(self, ctx, ctx.guild) == 2:
@@ -57,19 +59,19 @@ class Events(interactions.Extension):
             followers = tweepy.Paginator(self.client.get_users_followers, self.client.get_user(username=(bounty["link"].split("twitter.com/")[-1].split("/")[0])).data.id)
             likes = tweepy.Paginator(self.client.get_liking_users, str(bounty["link"]).split("?")[0].split("/")[-1])
             retweets = tweepy.Paginator(self.client.get_retweeters, str(bounty["link"]).split("?")[0].split("/")[-1])
-            if parse(followers, bounty, db, ctx, self.sol) and parse(likes, bounty, db, ctx, self.sol) and parse(retweets, bounty, db, ctx, self.sol):
-                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol)
+            if parse(followers, bounty, db, ctx) and parse(likes, bounty, db, ctx) and parse(retweets, bounty, db, ctx):
+                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol, token=Pubkey.from_string(bounty["token"][0]) if bounty["token"][0] != "SOL" else None, token_address=Pubkey.from_string(bounty["address"]) if bounty["address"] != None else None)
                 return await ctx.send("You have claimed this bounty!", ephemeral=True)
             else:
                 return await ctx.send("You have not fufilled the requirement(s).", ephemeral=True)
         if data2:
-            if parse(data, bounty, db, ctx, self.sol) and parse(data2, bounty, db, ctx, self.sol):
-                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol)
+            if parse(data, bounty, db, ctx) and parse(data2, bounty, db, ctx):
+                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol, token=Pubkey.from_string(bounty["token"][0]) if bounty["token"][0] != "SOL" else None, token_address=Pubkey.from_string(bounty["address"]) if bounty["address"] != None else None)
                 return await ctx.send("You have claimed this bounty!", ephemeral=True)
             return await ctx.send("You have not fufilled the requirement(s).", ephemeral=True)
         else:
-            if parse(data, bounty, db, ctx, self.sol):
-                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol)
+            if parse(data, bounty, db, ctx):
+                _transfer(bounty["reward"], db.Wallet, ctx.guild.id, self.sol, token=Pubkey.from_string(bounty["token"][0]) if bounty["token"][0] != "SOL" else None, token_address=Pubkey.from_string(bounty["address"]) if bounty["address"] != None else None)
                 return await ctx.send("You have claimed this bounty!", ephemeral=True)
             return await ctx.send("You have not fufilled the requirement(s).", ephemeral=True)
 

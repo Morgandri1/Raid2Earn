@@ -18,7 +18,7 @@ requirements = {
             7: "Like + Follow + Retweet"
         }
 
-def parse(data, bounty, db: user_db.User, ctx, sol: Client) -> bool:
+def parse(data, bounty, db: user_db.User, ctx) -> bool:
     """parses twitter Users list"""
     for sub in data:
         for user in sub:
@@ -35,14 +35,16 @@ def parse(data, bounty, db: user_db.User, ctx, sol: Client) -> bool:
                     continue
     return False
 
-def _transfer(amount, wallet, guild, sol: Client, token = None):
-    _from = Keypair.from_json((database.get_guild(guild).wallet_secret))
+def _transfer(amount, wallet, guild, sol: Client, token: Pubkey | None = None, token_address: Pubkey | None = None):
+    _from = Keypair.from_json(json.loads(database.get_guild(guild).wallet_secret))
     _to = Pubkey.from_string(wallet)
-    if not token:
-        tx = send_sol(_to, _from, sol, amount)
+    print("defined and compiled _to, _from")
+    if token is None or token_address is None:
+        return send_sol(_to, _from, sol, amount)
     else:
-        tx = send_token(_to, _from, token, amount, sol)
-    return tx
+        print("tokens caught")
+        decimals = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token_address}").json()["decimals"])
+        return send_token(_to, _from, 10**decimals, token, token_address, amount, sol)
 
 def preflight(cls, ctx, guild):
     """checks if the message is a bounty message
@@ -63,8 +65,11 @@ def preflight(cls, ctx, guild):
     if datetime.now() >= datetime.fromtimestamp(bounty["ends"]):
         os.remove(f"bounties/{guild.id}/{ctx.message.id}.json")
         return 2
-    if bal / 1000000000 < bounty["reward"]:
-        return 1
+    if bounty["token"][0] == "SOL":
+        if bal / 1000000000 < bounty["reward"]:
+            return 1
+    else:
+        return 3
     return 3
 
 def get_allowed_guilds():
@@ -77,5 +82,5 @@ def get_token_opts(guild, c: Client):
     tokens = get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
     opts = [interactions.SelectOption(label="SOL", value="SOL")]
     for token in tokens:
-        opts.append(interactions.SelectOption(label=(token['account']['data']['parsed']['info']["mint"] if get_token_identifiers(token['account']['data']['parsed']['info']["mint"])['name'] == '' else get_token_identifiers(token['account']['data']['parsed']['info']["mint"])['name']), value=token["pubkey"]))
+        opts.append(interactions.SelectOption(label=(token['account']['data']['parsed']['info']["mint"]), value=token["pubkey"]))
     return opts
