@@ -1,7 +1,7 @@
 import interactions
 import utils.allow as allow
 from utils.base import get_token_opts, requirements
-from solana.rpc.api import Client
+from solana.rpc.async_api import AsyncClient
 import json
 from datetime import timedelta, datetime
 import os
@@ -11,7 +11,7 @@ import database
 class create(interactions.Extension):
     def __init__(self, bot) -> None:
         self.bot: interactions.Client = bot
-        self.client: Client = Client("https://api.mainnet-beta.solana.com")
+        self.client: AsyncClient = AsyncClient("https://api.mainnet-beta.solana.com")
 
     @interactions.extension_command(
         name="create",
@@ -61,6 +61,7 @@ class create(interactions.Extension):
         ]
     )
     async def create(self, ctx: interactions.CommandContext, info: str, duration: int, link: str, reward: int, requirement: int):
+        print("cum")
         if not os.path.exists(f"bounties/{ctx.guild_id}"):
             os.mkdir(f"bounties/{ctx.guild_id}")
         db = database.get_guild(ctx.guild_id)
@@ -74,7 +75,7 @@ class create(interactions.Extension):
             interactions.SelectMenu(
                 custom_id="token",
                 placeholder="Select a token",
-                options=get_token_opts(int(ctx.guild_id), self.client)
+                options=await get_token_opts(int(ctx.guild_id), self.client)
                 )
         ], ephemeral=True)
         data = {
@@ -95,8 +96,9 @@ class create(interactions.Extension):
     async def token(self, ctx: interactions.ComponentContext, token: str):
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "r") as f:
             data = json.load(f)
+        info = await self.client.get_account_info_json_parsed(Pubkey.from_string(token[0]))
         data["token"] = token
-        data["address"] = json.loads(self.client.get_account_info_json_parsed(Pubkey.from_string(token[0])).to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"] if token[0] != "SOL" else None
+        data["address"] = json.loads(info.to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"] if token[0] != "SOL" else None
         data["ends"] = (datetime.utcnow() + timedelta(hours=data["duration"])).timestamp()
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "w") as f:
             json.dump(data, f)

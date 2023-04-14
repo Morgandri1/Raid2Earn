@@ -4,7 +4,7 @@ import json
 import os
 import database
 import user_db
-from solana.rpc.api import Client
+from solana.rpc.async_api import AsyncClient
 from datetime import datetime
 import interactions
 
@@ -18,7 +18,7 @@ requirements = {
             7: "Like + Follow + Retweet"
         }
 
-def parse(data, bounty, db: user_db.User, ctx) -> bool:
+async def parse(data, bounty, db: user_db.User, ctx) -> bool:
     """parses twitter Users list"""
     for sub in data:
         for user in sub:
@@ -35,18 +35,18 @@ def parse(data, bounty, db: user_db.User, ctx) -> bool:
                     continue
     return False
 
-def _transfer(amount, wallet, guild, sol: Client, token: Pubkey | None = None, token_address: Pubkey | None = None):
+async def _transfer(amount, wallet, guild, sol: AsyncClient, token: Pubkey | None = None, token_address: Pubkey | None = None):
     _from = Keypair.from_json(json.loads(database.get_guild(guild).wallet_secret))
     _to = Pubkey.from_string(wallet)
     print("defined and compiled _to, _from")
     if token is None or token_address is None:
-        return send_sol(_to, _from, sol, amount)
+        return await send_sol(_to, _from, sol, amount)
     else:
         print("tokens caught")
         decimals = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token_address}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()["decimals"])
-        return send_token(_to, _from, 10**decimals, token, token_address, amount, sol)
+        return await send_token(_to, _from, 10**decimals, token, token_address, amount, sol)
 
-def preflight(cls, ctx, guild, account: str | None = None):
+async def preflight(cls, ctx, guild, account: str | None = None):
     """checks if the message is a bounty message
     
     codes:
@@ -58,7 +58,8 @@ def preflight(cls, ctx, guild, account: str | None = None):
     if not os.path.exists(f"bounties/{guild.id}/{ctx.message.id}.json"):
         return 0
     db = database.get_guild(guild.id)
-    bal = int(json.loads(cls.sol.get_balance(Pubkey.from_string(db.wallet_pubkey)).to_json())["result"]["value"])
+    bal = await cls.sol.get_balance(Pubkey.from_string(db.wallet_pubkey))
+    bal = int(json.loads(bal.to_json())["result"]["value"])
     print(bal)
     with open(f"bounties/{guild.id}/{ctx.message.id}.json", "r") as f:
         bounty = json.load(f)
@@ -68,20 +69,23 @@ def preflight(cls, ctx, guild, account: str | None = None):
     if bounty["token"][0] == "SOL":
         if bal / 1000000000 < bounty["reward"]:
             return 1
-    elif account is not "SOL":
-        balance = int(requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={account}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()["tokenAmount"]["uiAmount"])
+    else:
+        balance = requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={account}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()
+        if balance == {'status': 400, 'error': {'message': 'missing or invalid tokenAddress'}}:
+            return 3 # token not found on secondary checks. ignore. 
+        balance = int(balance["tokenAmount"]["uiAmount"])
         if balance < int(bounty["reward"]):
             return 1
     return 3
 
-def get_allowed_guilds():
+async def get_allowed_guilds():
     with open("test.json", "r") as f:
         data = json.load(f)
     return data
 
-def get_token_opts(guild, c: Client):
+async def get_token_opts(guild, c: AsyncClient):
     db = database.get_guild(guild)
-    tokens = get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
+    tokens = await get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
     opts = [interactions.SelectOption(label="SOL", value="SOL")]
     for token in tokens:
         opts.append(interactions.SelectOption(label=(token['account']['data']['parsed']['info']["mint"]), value=token["pubkey"]))

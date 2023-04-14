@@ -1,7 +1,6 @@
 import interactions
 import user_db
 import tweepy
-from requests import Response
 
 class User(interactions.Extension):
     def __init__(self, bot) -> None:
@@ -35,6 +34,20 @@ class User(interactions.Extension):
         db.username = data.data.username
         db.Wallet = wallet
         await ctx.send("You have been registered!")
+        return user_db.update()
+
+    @interactions.extension_command(
+        name="reg clear",
+        description="Clear your registration so you can re-register",
+    )
+    async def reg_clear(self, ctx: interactions.CommandContext):
+        db = user_db.get_user(ctx.author.id)
+        if db.Uid == "None":
+            return await ctx.send("You are not registered!")
+        db.Uid = "None"
+        db.username = "None"
+        db.Wallet = "None"
+        await ctx.send("You have been unregistered!")
         return user_db.update()
 
 def setup(bot: interactions.Client):
