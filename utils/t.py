@@ -23,8 +23,8 @@ async def send_token(
 
     print(to)
 
-    destination = await token.create_account(to)
-    await send_sol(destination, source, client, 0.02040280)
+    destination = await _validate_token_account(client, token_mint_address, to, token)
+
     response = await token.transfer(
         source=token_account,
         dest=destination,
@@ -58,3 +58,23 @@ async def get_avalible_tokens(client: AsyncClient, pubkey: Pubkey) -> list:
 async def get_token_identifiers(token: Pubkey) -> dict:
     r = requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()
     return {"symbol": r["symbol"], "name": r["name"], "decimals": r["decimals"], "mint": str(token)}
+
+async def _validate_token_account(
+        client: AsyncClient, 
+        token: Pubkey, 
+        dest: Pubkey, 
+        program: AsyncToken
+    ) -> Pubkey:
+    """
+    !internal use only!
+    checks if the reciever has an attached token account, if not, creates one
+    """
+    raw_data = await client.get_token_accounts_by_owner_json_parsed(dest, opts=TokenAccountOpts(mint=token))
+    data = json.loads(raw_data.to_json())
+
+    for account in data["result"]["value"]:
+        print(account)
+        if account["account"]["data"]["parsed"]["info"]["mint"] == str(token):
+            return Pubkey.from_string(account["pubkey"])
+        else:
+            return await program.create_account(dest)

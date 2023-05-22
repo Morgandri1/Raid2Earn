@@ -37,7 +37,7 @@ class User(interactions.Extension):
         return user_db.update()
 
     @interactions.extension_command(
-        name="reg clear",
+        name="reg_clear",
         description="Clear your registration so you can re-register",
     )
     async def reg_clear(self, ctx: interactions.CommandContext):
