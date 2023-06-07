@@ -55,9 +55,29 @@ async def get_avalible_tokens(client: AsyncClient, pubkey: Pubkey) -> list:
     r = await client.get_token_accounts_by_owner_json_parsed(pubkey, TokenAccountOpts(program_id=TOKEN_PROGRAM_ID))
     return json.loads(r.to_json())["result"]["value"]
 
-async def get_token_identifiers(token: Pubkey) -> dict:
-    r = requests.get(f"https://public-api.solscan.io/token/meta?tokenAddress={token}", headers={"accept": "application/json", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE2Nzc0Njk5MzA0OTMsImVtYWlsIjoibW9yZ2FuLm1ldHpAZXlla29uLnh5eiIsImFjdGlvbiI6InRva2VuLWFwaSIsImlhdCI6MTY3NzQ2OTkzMH0.aVkZR-fP2yNhG_6xjarBnGOiuDcU2AKJ-vAdX4mBot0"}).json()
-    return {"symbol": r["symbol"], "name": r["name"], "decimals": r["decimals"], "mint": str(token)}
+async def get_token_identifiers(tokens: list) -> dict:
+    """
+    example:
+    {
+        "HwzkXyX8B45LsaHXwY8su92NoRBS5GQC32HzjQRDqPnr": {
+            "symbol": "SAMO",
+            "name": "Samoyedcoin"
+        }
+    }
+    """
+    r = requests.post(
+        f"https://rest-api.hellomoon.io/v0/nft/mint_information", 
+        headers={
+            "accept": "application/json", 
+            'authorization': 'Bearer b4392ac7-dd14-4b9d-9b47-eb25dde52ebd', 
+            "content-type": "application/json"
+        }, 
+        json={"nftMint": tokens}
+    ).json()
+    data = {}
+    for index, token in enumerate(r["data"]):
+        data[r["data"][index]["nftMint"]] = {"symbol": token["nftMetadataJson"]["symbol"], "name": token["nftMetadataJson"]["name"], "mint": token["nftMint"]}
+    return data
 
 async def _validate_token_account(
         client: AsyncClient, 

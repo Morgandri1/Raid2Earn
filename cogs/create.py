@@ -1,6 +1,7 @@
 import interactions
 import utils.allow as allow
 from utils.base import get_token_opts, requirements
+from utils.t import get_token_identifiers
 from solana.rpc.async_api import AsyncClient
 import json
 from datetime import timedelta, datetime
@@ -88,18 +89,23 @@ class create(interactions.Extension):
             "requirement": requirement,
             "token": None,
             "claimed": [],
+            "symbol": None
         }
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "w") as f:
             json.dump(data, f)
 
     @interactions.extension_component("token")
     async def token(self, ctx: interactions.ComponentContext, token: str):
+        print(token)
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "r") as f:
             data = json.load(f)
-        info = await self.client.get_account_info_json_parsed(Pubkey.from_string(token[0]))
+        info = await self.client.get_account_info_json_parsed(Pubkey.from_string(token[0])) if token[0] != "SOL" else None
+        mint = json.loads(info.to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"]
+        symbol = await get_token_identifiers(mint) if info else "SOL"
         data["token"] = token
-        data["address"] = json.loads(info.to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"] if token[0] != "SOL" else None
+        data["address"] = json.loads(info.to_json())["result"]["value"]["data"]["parsed"]["info"]["mint"] if info else "SOL"
         data["ends"] = (datetime.utcnow() + timedelta(hours=data["duration"])).timestamp()
+        data["symbol"] = str(symbol[mint]["symbol"])
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "w") as f:
             json.dump(data, f)
         await ctx.edit(
@@ -127,7 +133,7 @@ class create(interactions.Extension):
             data = json.load(f)
         embed = interactions.Embed(
             title="New bounty!",
-            description=f"Info: {data['info']}\nReward: {data['reward']} {data['token'] if data['token'] == 'SOL' else ' '}\nRequirement: {requirements[data['requirement']]}\nDuration: {data['duration']} hours\nEnds: {datetime.fromtimestamp(data['ends'])}"
+            description=f"Info: {data['info']}\nReward: {data['reward']} {data['symbol']}\nRequirement: {requirements[data['requirement']]}\nDuration: {data['duration']} hours\nEnds: {datetime.fromtimestamp(data['ends'])}"
         )
         old = ctx.message.id
         message = await ctx.send(

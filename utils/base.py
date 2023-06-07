@@ -85,8 +85,20 @@ async def get_allowed_guilds():
 
 async def get_token_opts(guild, c: AsyncClient):
     db = database.get_guild(guild)
-    tokens = await get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
+    aTokens = await get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
+    print(aTokens)
+    tokens = await get_token_identifiers([token['account']['data']['parsed']['info']["mint"] for token in aTokens])
     opts = [interactions.SelectOption(label="SOL", value="SOL")]
     for token in tokens:
-        opts.append(interactions.SelectOption(label=(token['account']['data']['parsed']['info']["mint"]), value=token["pubkey"]))
+        opts.append(interactions.SelectOption(label=(f"{tokens[token]['name']} - {tokens[token]['symbol']}"), value=aTokens[get_index(aTokens, token)]["pubkey"]))
     return opts
+
+def get_index(data: list, item):
+    for index, i in enumerate(data):
+        if i["account"]["data"]["parsed"]["info"]["mint"] == item:
+            return index
+        
+
+"""
+{'pubkey': '5cJxB74CqeAGFooLHAd8Y7yKLnAZuU38JPMriwz7jWze', 'account': {'data': {'parsed': {'info': {'mint': 'PhiLR4JDZB9z92rYT5xBXKCxmq4pGB1LYjtybii7aiS', 'owner': '19SWrc62ce3yGkXyModGBnF9zFwdMr6GWuYxnvGynS8', 'state': 'initialized', 'tokenAmount': {'amount': '10000000', 'decimals': 5, 'uiAmount': 100.0, 'uiAmountString': '100'}}, 'type': 'account'}, 'space': 165}, 'owner': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'executable': False, 'rentEpoch': 0}}
+"""

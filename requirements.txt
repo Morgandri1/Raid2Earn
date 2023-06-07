@@ -2,3 +2,4 @@ discord-py-interactions
 sqlalchemy
 solana
 solders
+tweepy
