@@ -29,6 +29,10 @@ class User(interactions.Extension):
         db = user_db.get_user(ctx.author.id)
         if db.Uid != "None":
             return await ctx.send("You are already registered!")
+        if username.startswith("@"):
+            username = username[1:]
+        if username.startswith("https://twitter.com/"):
+            username = username.split("/")[-1]
         data = self.client.get_user(username=username)
         db.Uid = data.data.id
         db.username = data.data.username

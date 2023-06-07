@@ -56,7 +56,12 @@ class create(interactions.Extension):
                     interactions.Choice(name="Like + Retweet", value=4),
                     interactions.Choice(name="Follow + Retweet", value=5),
                     interactions.Choice(name="Like + Follow", value=6),
-                    interactions.Choice(name="Like + Follow + Retweet", value=7)
+                    interactions.Choice(name="Like + Follow + Retweet", value=7),
+                    interactions.Choice(name="Like + Comment", value=8),
+                    interactions.Choice(name="Follow + Comment", value=9),
+                    interactions.Choice(name="Like + Retweet + Comment", value=10),
+                    interactions.Choice(name="Follow + Retweet + Comment", value=11),
+                    interactions.Choice(name="Like + Follow + Retweet + Comment", value=12),
                 ]
             )
         ]
@@ -160,3 +165,14 @@ class create(interactions.Extension):
 
 def setup(bot):
     create(bot)
+
+"""
+Twitter auth:
+API key: 6S95rFVeMrTrujpRzNwtm0H2R
+API Key Secret: I523YG6LyaCS8tvBK0Nc2fAT4WlJ9Uqyr8g9Pe7pl4HzoIXjCH
+Access token: 1489800636954812422-AJ43VA2dcKa1CkICu6F6n3m51ZaGok
+Access token Secret: jPwcIWHrGL1QdT2R1tmt5Op8ZT4IPJouQUBSDlandfDad
+Client Secret: -b7tOVzUSyy7p2KtZI45YQAvm5IUlprh1WaAA4uE6Bj9Vz3-Ei
+Client ID: SVMteXNrMFRIUHdxM0k2VFZmOHU6MTpjaQ
+
+"""
