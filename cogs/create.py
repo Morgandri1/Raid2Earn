@@ -14,6 +14,19 @@ class create(interactions.Extension):
         self.bot: interactions.Client = bot
         self.client: AsyncClient = AsyncClient("https://api.mainnet-beta.solana.com")
 
+    async def step_3(self, ctx: interactions.ComponentContext):
+        embed = interactions.Embed(
+            title="Bounty Builder",
+            description="Please select a payout token to create a bounty."
+        )
+        return await ctx.send(embeds=embed, components=[
+            interactions.SelectMenu(
+                custom_id="token",
+                placeholder="Select a token",
+                options=await get_token_opts(int(ctx.guild_id), self.client)
+                )
+        ], ephemeral=True)
+
     @interactions.extension_command(
         name="create",
         description="Create a new bounty",
@@ -63,27 +76,22 @@ class create(interactions.Extension):
                     interactions.Choice(name="Follow + Retweet + Comment", value=11),
                     interactions.Choice(name="Like + Follow + Retweet + Comment", value=12),
                 ]
+            ),
+            interactions.Option(
+                name="query",
+                description="The query to search for in the replies",
+                type=interactions.OptionType.STRING,
+                required=False,
             )
         ]
     )
-    async def create(self, ctx: interactions.CommandContext, info: str, duration: int, link: str, reward: int, requirement: int):
-        print("cum")
+    async def create(self, ctx: interactions.CommandContext, info: str, duration: int, link: str, reward: int, requirement: int, query: str = None):
         if not os.path.exists(f"bounties/{ctx.guild_id}"):
             os.mkdir(f"bounties/{ctx.guild_id}")
         db = database.get_guild(ctx.guild_id)
         if db.wallet_pubkey == "None":
             return await ctx.send("Please create a wallet first with `/wallet`.", ephemeral=True)
-        embed = interactions.Embed(
-            title="Bounty Builder",
-            description="Please select a payout token to create a bounty."
-        )
-        await ctx.send(embeds=embed, components=[
-            interactions.SelectMenu(
-                custom_id="token",
-                placeholder="Select a token",
-                options=await get_token_opts(int(ctx.guild_id), self.client)
-                )
-        ], ephemeral=True)
+        message = await self.step_3(ctx)
         data = {
             "info": info,
             "link": link,
@@ -94,14 +102,19 @@ class create(interactions.Extension):
             "requirement": requirement,
             "token": None,
             "claimed": [],
-            "symbol": None
+            "symbol": None,
+            "hashtag": query
         }
-        with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "w") as f:
+        with open(f"bounties/{ctx.guild_id}/{message.id}.json", "w") as f:
             json.dump(data, f)
+        print(message.id)
+        print("cum")
+        return 
 
     @interactions.extension_component("token")
     async def token(self, ctx: interactions.ComponentContext, token: str):
         print(token)
+
         with open(f"bounties/{ctx.guild_id}/{ctx.message.id}.json", "r") as f:
             data = json.load(f)
         info = await self.client.get_account_info_json_parsed(Pubkey.from_string(token[0])) if token[0] != "SOL" else None
@@ -138,7 +151,7 @@ class create(interactions.Extension):
             data = json.load(f)
         embed = interactions.Embed(
             title="New bounty!",
-            description=f"Info: {data['info']}\nReward: {data['reward']} {data['symbol']}\nRequirement: {requirements[data['requirement']]}\nDuration: {data['duration']} hours\nEnds: {datetime.fromtimestamp(data['ends'])}"
+            description=f"Info: {data['info']}\nReward: {data['reward']} {data['symbol']}\nRequirement: {requirements[data['requirement']]}\nDuration: {data['duration']} hours\nEnds: {datetime.fromtimestamp(data['ends'])}" + (f"\nComment: {data['hashtag']}" if data["hashtag"] else "")
         )
         old = ctx.message.id
         message = await ctx.send(

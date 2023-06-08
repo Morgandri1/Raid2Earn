@@ -15,7 +15,12 @@ requirements = {
             4: "Like + Retweet",
             5: "Follow + Retweet",
             6: "Like + Follow",
-            7: "Like + Follow + Retweet"
+            7: "Like + Follow + Retweet",
+            8: "Like + Comment",
+            9: "Follow + Comment",
+            10: "Like + Retweet + Comment",
+            11: "Follow + Retweet + Comment",
+            12: "Like + Follow + Retweet + Comment"
         }
 
 async def parse(data, bounty, db: user_db.User, ctx) -> bool:
