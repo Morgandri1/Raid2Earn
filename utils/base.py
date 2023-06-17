@@ -8,6 +8,17 @@ from solana.rpc.async_api import AsyncClient
 from datetime import datetime
 import interactions
 
+notation = {
+    2: 10e2,
+    3: 10e3,
+    4: 10e4,
+    5: 10e5,
+    6: 10e6,
+    7: 10e7,
+    8: 10e8,
+    9: 10e9
+}
+
 requirements = {
             1: "Like",
             2: "Follow",
@@ -22,6 +33,9 @@ requirements = {
             11: "Follow + Retweet + Comment",
             12: "Like + Follow + Retweet + Comment"
         }
+
+def make_integer_smaller(big_integer, power_of_ten):
+    return big_integer // (10 ** power_of_ten)
 
 async def parse(data, bounty, db: user_db.User, ctx) -> bool:
     """parses twitter Users list"""
@@ -98,12 +112,31 @@ async def get_token_opts(guild, c: AsyncClient):
         opts.append(interactions.SelectOption(label=(f"{tokens[token]['name']} - {tokens[token]['symbol']}"), value=aTokens[get_index(aTokens, token)]["pubkey"]))
     return opts
 
+async def get_token_opts_universal(guild, c: AsyncClient) -> list[dict]:
+    db = database.get_guild(guild)
+    aTokens = await get_avalible_tokens(c, Pubkey.from_string(db.wallet_pubkey))
+    print(aTokens)
+    tokens = await get_token_identifiers([token['account']['data']['parsed']['info']["mint"] for token in aTokens])
+    output = []
+    for token in tokens:
+        output.append(f'``{make_integer_smaller(int(aTokens[get_index(aTokens, token)]["account"]["data"]["parsed"]["info"]["tokenAmount"]["amount"]), int(aTokens[get_index(aTokens, token)]["account"]["data"]["parsed"]["info"]["tokenAmount"]["decimals"]))} {tokens[token]["symbol"]},``')
+    return output
+
 def get_index(data: list, item):
     for index, i in enumerate(data):
         if i["account"]["data"]["parsed"]["info"]["mint"] == item:
             return index
         
+def get_index_dict(data: dict, item):
+    for key in data:
+        if data[key] == item:
+            return key
+    raise IndexError("Item not found in dict")
+        
 
 """
-{'pubkey': '5cJxB74CqeAGFooLHAd8Y7yKLnAZuU38JPMriwz7jWze', 'account': {'data': {'parsed': {'info': {'mint': 'PhiLR4JDZB9z92rYT5xBXKCxmq4pGB1LYjtybii7aiS', 'owner': '19SWrc62ce3yGkXyModGBnF9zFwdMr6GWuYxnvGynS8', 'state': 'initialized', 'tokenAmount': {'amount': '10000000', 'decimals': 5, 'uiAmount': 100.0, 'uiAmountString': '100'}}, 'type': 'account'}, 'space': 165}, 'owner': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'executable': False, 'rentEpoch': 0}}
+/notation[int(aTokens[get_index(aTokens, token)]["account"]["data"]["parsed"]["info"]["tokenAmount"]["decimals"])]
+"""
+"""
+{'account': {'data': {'parsed': {'info': {'tokenAmount': {'amount': '10000000', 'decimals': 5, 'uiAmount': 100.0, 'uiAmountString': '100'}}, 'type': 'account'}, 'space': 165}, 'owner': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'executable': False, 'rentEpoch': 0}}
 """

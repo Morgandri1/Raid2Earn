@@ -1,12 +1,9 @@
-import t
-from solana.rpc.async_api import AsyncClient
-from solders.pubkey import Pubkey
-from spl.token.async_client import AsyncToken
-from spl.token.constants import TOKEN_PROGRAM_ID
+def make_integer_smaller(big_integer, power_of_ten):
+    return big_integer // (10 ** power_of_ten)
 
-print(t._validate_token_account(
-    AsyncClient("https://api.mainnet-beta.solana.com"),
-    Pubkey.from_string("QHPMKes2Fj8kWrRneZC8vpahBf2zgRYXgTFoWqWiUVj"),
-    Pubkey.from_string("Fpa2S13a82aBu9YGscAEqttXJaCZb5TVzhscmUApnzhP"),
-    AsyncToken(AsyncClient, Pubkey.from_string("QHPMKes2Fj8kWrRneZC8vpahBf2zgRYXgTFoWqWiUVj"), TOKEN_PROGRAM_ID, payer)
-))
+# Example usage
+big_integer = 6000000000
+power_of_ten = 5  # Assuming the specific number is 10^5
+
+smaller_integer = make_integer_smaller(big_integer, power_of_ten)
+print(smaller_integer)

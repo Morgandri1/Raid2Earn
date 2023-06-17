@@ -6,6 +6,7 @@ from solders.pubkey import Pubkey
 from solana.rpc.async_api import AsyncClient
 from utils import allow
 import interactions.ext.checks as checks
+from utils.base import get_token_opts_universal
 
 class Admin(interactions.Extension):
     def __init__(self, bot) -> None:
@@ -28,7 +29,9 @@ class Admin(interactions.Extension):
             return await ctx.send(f"Your wallet has been created! Your address is `{db.wallet_pubkey}`.")
         bal = await self.client.get_balance(Pubkey.from_string(db.wallet_pubkey))
         bal = bal.to_json()
-        return await ctx.send(f"Your wallet address is ``{db.wallet_pubkey}``.\nit currently has ``{json.loads(bal)['result']['value']/1000000000}`` SOL.")
+        d = await get_token_opts_universal(ctx.guild.id, self.client)
+        d = "\n".join(d)
+        return await ctx.send(f"Your wallet address is ``{db.wallet_pubkey}``.\nit currently has: \n``{json.loads(bal)['result']['value']/1000000000} SOL``,\n"+d)
     
     # @interactions.extension_command(
     #     name="billing",
