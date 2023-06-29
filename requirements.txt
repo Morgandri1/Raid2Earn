@@ -3,4 +3,4 @@ sqlalchemy
 solana
 solders
 tweepy
-interactions-checks
+git+"https://github.com/Catalyst4222/interactions-checks.git"
