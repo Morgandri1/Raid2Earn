@@ -1,6 +1,6 @@
-token.txt
-users.db
-database.db
+# token.txt
+# users.db
+# database.db
 .DS_Store
 __pycache__
 bounties/
