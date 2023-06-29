@@ -3,3 +3,4 @@ sqlalchemy
 solana
 solders
 tweepy
+interactions-checks
