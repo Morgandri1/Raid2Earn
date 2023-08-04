@@ -69,7 +69,7 @@ async def get_token_identifiers(tokens: list) -> dict:
         f"https://rest-api.hellomoon.io/v0/nft/mint_information", 
         headers={
             "accept": "application/json", 
-            'authorization': 'Bearer b4392ac7-dd14-4b9d-9b47-eb25dde52ebd', 
+            'authorization': '', 
             "content-type": "application/json"
         }, 
         json={"nftMint": tokens}
